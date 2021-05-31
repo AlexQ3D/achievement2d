@@ -7,8 +7,6 @@
 
 Import the latest release into any GameMaker Studio 2.3+ project.
 
-========
-
 ## Functions
 
 ## achievement_init()
