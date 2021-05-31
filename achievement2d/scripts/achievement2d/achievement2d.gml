@@ -1,7 +1,4 @@
-// Multiplatform acchievement adder
-function log(msg) {
-	show_debug_message(msg);
-}
+// Multiplatform acchievement manager
 
 // Sets up everything necessary for achievements
 // Only call once at the game start
@@ -17,17 +14,25 @@ function achievement_cleanup() {
 
 // Achievement class
 // Holds everything necessary for acchievements to work on multiple platforms
-function Achievement(_internalName, _steamName, _defaultValue, _triggerValue) constructor {
+function Achievement(_internalName, _steamName, _defaultValue, _triggerCase, isMethod) constructor {
 	internalName = _internalName;
 	steamName = _steamName;
 	value = _defaultValue;
-	triggerValue = _triggerValue;
+	triggerValue = _triggerCase;
+	triggerMethod = -1;
 	triggered = false;
 	valueIsString = false;
-	
+	triggerIsMethod = (argument_count > 4) ? argument[4] : false;
+
+
 	// Used in checking if the achievement's been triggered
 	if (is_string(triggerValue)) {
 		valueIsString = true;	
+	}
+	
+	// Used if the achievement's trigger is a method
+	if (triggerIsMethod) {
+		triggerMethod = method(other, _triggerCase);
 	}
 	
 	
@@ -61,7 +66,7 @@ function Achievement(_internalName, _steamName, _defaultValue, _triggerValue) co
 		value = newValue;
 		
 		// First case checks if the value is larger and not a string, second checks if the current value is equal to the triggervalue
-		var achievementTriggered = (((value >= triggerValue) && (!valueIsString)) || (value == triggerValue));
+		var achievementTriggered = (((value >= triggerValue) && (!valueIsString)) || (value == triggerValue) || (triggerIsMethod && (triggerMethod(value) == true)));
 		
 		// Check if the new
 		if (achievementTriggered) {
@@ -91,14 +96,22 @@ function Achievement(_internalName, _steamName, _defaultValue, _triggerValue) co
 
 }
 
+
 // Adds an achievement to the game
-function achievement_add(internalName, steamName, defaultValue, triggerValue) {
+function achievement_add(internalName, steamName, defaultValue, triggerValue, isMethod) {
 	achievement = ds_map_find_value(global.achievements, internalName);
 	
+	// Workaround for GM weirdness, allows a method to be passed in as an achievement trigger
+	isMethod = (argument_count > 4) ? argument[4] : false;
+	if (isMethod) {
+		triggerValue = method(other, triggerValue);
+	}
+	
+	
 	if (is_undefined(achievement)) {
-		ds_map_add(global.achievements, internalName, new Achievement(internalName, steamName, defaultValue, triggerValue));
+		ds_map_add(global.achievements, internalName, new Achievement(internalName, steamName, defaultValue, triggerValue, isMethod));
 	} else {
-		show_error("Duplicate achievement \"" + internalName + "\"!");
+		show_error("Duplicate achievement \"" + internalName + "\"!", false);
 	}
 }
 
